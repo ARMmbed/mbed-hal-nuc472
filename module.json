@@ -1,0 +1,37 @@
+{
+  "name": "mbed-hal-nuc472",
+  "version": "1.0.0",
+  "description": "mbed HAL for Nuvoton NUC472 MCUs",
+  "private": true,
+  "keywords": [
+    "mbed",
+    "hal",
+    "nuc472",
+    "nuvoton",
+    "mbed-official"
+  ],
+  "author": "Chun-Chieh Li <ccli8@nuvoton.com>",
+  "repository": {
+    "url": "https://github.com/ARMmbed/mbed-hal-nuc472.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/ARMmbed/mbed-hal-nuc472",
+  "licenses": [
+    {
+      "url": "https://spdx.org/licenses/Apache-2.0",
+      "type": "Apache-2.0"
+    }
+  ],
+  "extraIncludes": [
+    "mbed-hal-nuc472"
+  ],
+  "dependencies": {
+    "uvisor-lib": "^1.0.0",
+    "mbed-hal": "*"
+  },
+  "targetDependencies": {
+    "nutiny": {
+      "mbed-hal-nuc472-nutiny": "^1.0.0"
+    }
+  }
+}
