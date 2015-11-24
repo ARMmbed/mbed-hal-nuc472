@@ -78,12 +78,12 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
     obj->i2c.address = 0;
 #endif
 
-    I2C_Open((I2C_T *) obj->i2c.i2c, 100000);
+    I2C_Open((I2C_T *) NU_MODBASE(obj->i2c.i2c), 100000);
 }
 
 int i2c_start(i2c_t *obj)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     
     uint32_t status = I2C_GET_STATUS(i2c_base);
     switch (status) {
@@ -109,7 +109,7 @@ int i2c_start(i2c_t *obj)
 
 int i2c_stop(i2c_t *obj)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     
     uint32_t status = I2C_GET_STATUS(i2c_base);
     switch (status) {
@@ -133,7 +133,7 @@ int i2c_stop(i2c_t *obj)
 
 void i2c_frequency(i2c_t *obj, int hz)
 {
-    I2C_SetBusClockFreq((I2C_T *) obj->i2c.i2c, hz);
+    I2C_SetBusClockFreq((I2C_T *) NU_MODBASE(obj->i2c.i2c), hz);
 }
 
 int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
@@ -201,7 +201,7 @@ void i2c_reset(i2c_t *obj)
 #if 0
     i2c_stop(obj);
 #else
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     I2C_SET_CONTROL_REG(i2c_base, I2C_CTL_STO_Msk | I2C_CTL_SI_Msk);
     i2c_poll_status_timeout(obj, i2c_is_stop_det, NU_I2C_TIMEOUT_STOP);
     I2C_SET_CONTROL_REG(i2c_base, I2C_CTL_SI_Msk);
@@ -222,7 +222,7 @@ int i2c_byte_write(i2c_t *obj, int data)
 
 static int i2c_do_write(i2c_t *obj, char data)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     uint32_t status;
     
     status = I2C_GET_STATUS(i2c_base);
@@ -279,7 +279,7 @@ static int i2c_do_write(i2c_t *obj, char data)
 
 static int i2c_do_read(i2c_t *obj, char *data, int last)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     uint32_t status;
     
     status = I2C_GET_STATUS(i2c_base);
@@ -342,13 +342,13 @@ static int i2c_poll_status_timeout(i2c_t *obj, int (*is_status)(i2c_t *obj), uin
 
 static int i2c_is_stat_int(i2c_t *obj)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     return !! (i2c_base->CTL & I2C_CTL_SI_Msk);
 }
 
 static int i2c_is_stop_det(i2c_t *obj)
 {
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     return ! (i2c_base->CTL & I2C_CTL_STO_Msk);
 }
 
@@ -374,7 +374,7 @@ void i2c_transfer_asynch(i2c_t *obj, void *tx, size_t tx_length, void *rx, size_
     obj->i2c.event = event;
     i2c_buffer_set(obj, tx, tx_length, rx, rx_length);
 
-    //I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    //I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     
     i2c_enable_vector_interrupt(obj, handler, 1);
     i2c_start(obj);
@@ -384,7 +384,7 @@ uint32_t i2c_irq_handler_asynch(i2c_t *obj)
 {
     int event = 0;
 
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     uint32_t status = I2C_GET_STATUS(i2c_base);
     switch (status) {
         case 0x08:  // Start
@@ -446,7 +446,7 @@ uint32_t i2c_irq_handler_asynch(i2c_t *obj)
         case 0x50:  // Master Receive Data ACK
             if (obj->rx_buff.buffer && obj->rx_buff.pos < obj->rx_buff.length) {
                 uint8_t *rx = (uint8_t *) obj->rx_buff.buffer;
-                rx[obj->rx_buff.pos ++] = I2C_GET_DATA(((I2C_T *) obj->i2c.i2c));
+                rx[obj->rx_buff.pos ++] = I2C_GET_DATA(((I2C_T *) NU_MODBASE(obj->i2c.i2c)));
             }
         case 0x40:  // Master Receive Address ACK
             I2C_SET_CONTROL_REG(i2c_base, I2C_CTL_SI_Msk | ((obj->rx_buff.pos != obj->rx_buff.length - 1) ? I2C_CTL_AA_Msk : 0));
@@ -462,7 +462,7 @@ uint32_t i2c_irq_handler_asynch(i2c_t *obj)
         case 0x58:  // Master Receive Data NACK
             if (obj->rx_buff.buffer && obj->rx_buff.pos < obj->rx_buff.length) {
                 uint8_t *rx = (uint8_t *) obj->rx_buff.buffer;
-                rx[obj->rx_buff.pos ++] = I2C_GET_DATA(((I2C_T *) obj->i2c.i2c));
+                rx[obj->rx_buff.pos ++] = I2C_GET_DATA(((I2C_T *) NU_MODBASE(obj->i2c.i2c)));
             }
             I2C_SET_CONTROL_REG(i2c_base, I2C_CTL_STA_Msk | I2C_CTL_SI_Msk);
             break;
@@ -488,7 +488,7 @@ uint32_t i2c_irq_handler_asynch(i2c_t *obj)
 
 uint8_t i2c_active(i2c_t *obj)
 {   
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     return !! (i2c_base->CTL & I2C_CTL_INTEN_Msk);
 }
 
@@ -514,7 +514,7 @@ static void i2c_enable_vector_interrupt(i2c_t *obj, uint32_t handler, int enable
     MBED_ASSERT(modinit != NULL);
     MBED_ASSERT(modinit->modname == obj->i2c.i2c);
     
-    I2C_T *i2c_base = (I2C_T *) obj->i2c.i2c;
+    I2C_T *i2c_base = (I2C_T *) NU_MODBASE(obj->i2c.i2c);
     
     if (enable) {
         NVIC_SetVector(modinit->irq_n, handler);

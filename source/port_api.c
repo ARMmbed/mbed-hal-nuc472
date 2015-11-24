@@ -23,7 +23,7 @@
 
 static PinName port_pin(PortName port, int pin_n)
 {
-    return (PinName) PORT_N_PIN_TO_PINNAME(port, pin_n);
+    return (PinName) NU_PORT_N_PIN_TO_PINNAME(port, pin_n);
 }
 
 void port_init(port_t *obj, PortName port, int mask, PinDirection dir)
@@ -50,9 +50,9 @@ void port_dir(port_t *obj, PinDirection dir)
     for (i = 0; i < GPIO_PIN_MAX; i++) {
         if (obj->mask & (1 << i)) {
             if (dir == PIN_OUTPUT) {
-                GPIO_SetMode(PORT_BASE(obj->port), 1 << i, GPIO_MODE_OUTPUT);
+                GPIO_SetMode(NU_PORT_BASE(obj->port), 1 << i, GPIO_MODE_OUTPUT);
             } else { // PIN_INPUT
-                GPIO_SetMode(PORT_BASE(obj->port), 1 << i, GPIO_MODE_INPUT);
+                GPIO_SetMode(NU_PORT_BASE(obj->port), 1 << i, GPIO_MODE_INPUT);
             }
         }
     }

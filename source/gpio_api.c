@@ -26,10 +26,10 @@ uint32_t gpio_set(PinName pin)
         return 0;
     }
     
-    uint32_t pin_index = PINNAME_TO_PIN(pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(pin);
     
 #if 1
-    pin_function(pin, 0 << MFP_POS(pin_index));
+    pin_function(pin, 0 << NU_MFP_POS(pin_index));
 #else
     pinmap_pinout(pin, PinMap_GPIO);
 #endif
@@ -63,9 +63,9 @@ void gpio_dir(gpio_t *obj, PinDirection direction)
         return;
     }
     
-    uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
-    GPIO_T *gpio_base = PORT_BASE(port_index);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
+    GPIO_T *gpio_base = NU_PORT_BASE(port_index);
     
     uint32_t mode_intern = GPIO_MODE_INPUT;
     

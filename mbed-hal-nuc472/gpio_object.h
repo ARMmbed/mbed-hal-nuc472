@@ -35,8 +35,8 @@ typedef struct {
 static inline void gpio_write(gpio_t *obj, int value)
 {
     MBED_ASSERT(obj->pin != (PinName)NC);    
-    uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
     
     GPIO_PIN_ADDR(port_index, pin_index) = value ? 1 : 0;
 }
@@ -44,8 +44,8 @@ static inline void gpio_write(gpio_t *obj, int value)
 static inline int gpio_read(gpio_t *obj)
 {
     MBED_ASSERT(obj->pin != (PinName)NC);
-    uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
     
     return (GPIO_PIN_ADDR(port_index, pin_index) ? 1 : 0);
 }

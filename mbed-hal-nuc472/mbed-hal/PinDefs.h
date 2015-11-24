@@ -22,13 +22,13 @@
 extern "C" {
 #endif
 
-#define PORT_SHIFT  12
-#define PINNAME_TO_PORT(name)           ((unsigned int)(name) >> PORT_SHIFT)
-#define PINNAME_TO_PIN(name)            ((unsigned int)(name) & ~(0xFFFFFFFF << PORT_SHIFT))
-#define PORT_N_PIN_TO_PINNAME(port, pin)  ((((unsigned int) (port)) << (PORT_SHIFT)) | ((unsigned int) (pin)))
-#define PORT_BASE(port)                 ((GPIO_T *)(((uint32_t) GPIOA_BASE) + 0x40 * port))
-#define MFP_POS(pin)                    ((pin % 8) * 4)
-#define MFP_MSK(pin)                    (0xful << MFP_POS(pin))
+#define NU_PORT_SHIFT  12
+#define NU_PINNAME_TO_PORT(name)            ((unsigned int)(name) >> NU_PORT_SHIFT)
+#define NU_PINNAME_TO_PIN(name)             ((unsigned int)(name) & ~(0xFFFFFFFF << NU_PORT_SHIFT))
+#define NU_PORT_N_PIN_TO_PINNAME(port, pin) ((((unsigned int) (port)) << (NU_PORT_SHIFT)) | ((unsigned int) (pin)))
+#define NU_PORT_BASE(port)                  ((GPIO_T *)(((uint32_t) GPIOA_BASE) + 0x40 * port))
+#define NU_MFP_POS(pin)                     ((pin % 8) * 4)
+#define NU_MFP_MSK(pin)                     (0xful << NU_MFP_POS(pin))
 
 typedef enum {
     PIN_INPUT,

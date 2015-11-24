@@ -23,7 +23,7 @@
 
 #define DEVICE_INTERRUPTIN      1
 
-#define DEVICE_ANALOGIN         0
+#define DEVICE_ANALOGIN         1
 #define DEVICE_ANALOGOUT        0
 
 #define DEVICE_SERIAL           1
@@ -43,7 +43,7 @@
 
 #define DEVICE_ETHERNET         0
 
-#define DEVICE_PWMOUT           0
+#define DEVICE_PWMOUT           1
 
 #define DEVICE_SEMIHOST         0
 #define DEVICE_LOCALFILESYSTEM  0

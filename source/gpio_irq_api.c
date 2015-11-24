@@ -65,8 +65,8 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
         return -1;
     }
     
-    uint32_t pin_index = PINNAME_TO_PIN(pin);
-    uint32_t port_index = PINNAME_TO_PORT(pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(pin);
     if (pin_index >= NU_MAX_PIN_PER_PORT || port_index >= NU_MAX_PORT) {
         return -1;
     }
@@ -90,12 +90,12 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
 
 void gpio_irq_free(gpio_irq_t *obj)
 {
-    uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
     struct nu_gpio_irq_var *var = gpio_irq_var_arr + port_index;
     
     NVIC_DisableIRQ(var->irq_n);
-    PORT_BASE(port_index)->INTEN = 0;
+    NU_PORT_BASE(port_index)->INTEN = 0;
     
     MBED_ASSERT(pin_index < NU_MAX_PIN_PER_PORT);
     var->obj_arr[pin_index] = NULL;
@@ -103,9 +103,9 @@ void gpio_irq_free(gpio_irq_t *obj)
 
 void gpio_irq_set(gpio_irq_t *obj, gpio_irq_event event, uint32_t enable)
 {
-    uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
-    GPIO_T *gpio_base = PORT_BASE(port_index);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
+    GPIO_T *gpio_base = NU_PORT_BASE(port_index);
     
     switch (event) {
         case IRQ_RISE:
@@ -132,8 +132,8 @@ void gpio_irq_set(gpio_irq_t *obj, gpio_irq_event event, uint32_t enable)
 
 void gpio_irq_enable(gpio_irq_t *obj)
 {
-    //uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
+    //uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
     struct nu_gpio_irq_var *var = gpio_irq_var_arr + port_index;
     
     NVIC_SetVector(var->irq_n, (uint32_t) var->vec);
@@ -142,8 +142,8 @@ void gpio_irq_enable(gpio_irq_t *obj)
 
 void gpio_irq_disable(gpio_irq_t *obj)
 {
-    //uint32_t pin_index = PINNAME_TO_PIN(obj->pin);
-    uint32_t port_index = PINNAME_TO_PORT(obj->pin);
+    //uint32_t pin_index = NU_PINNAME_TO_PIN(obj->pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(obj->pin);
     struct nu_gpio_irq_var *var = gpio_irq_var_arr + port_index;
     
     NVIC_DisableIRQ(var->irq_n);
@@ -189,7 +189,7 @@ static void gpio_irq_8_vec(void)
 static void gpio_irq(struct nu_gpio_irq_var *var)
 {
     uint32_t port_index = var->irq_n - GPA_IRQn;
-    GPIO_T *gpio_base = PORT_BASE(port_index);
+    GPIO_T *gpio_base = NU_PORT_BASE(port_index);
     
     uint32_t intsrc = gpio_base->INTSRC;
     uint32_t inten = gpio_base->INTEN;

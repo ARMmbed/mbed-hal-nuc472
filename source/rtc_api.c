@@ -20,6 +20,7 @@
 
 #include "mbed-drivers/mbed_error.h"
 #include "nu_modutil.h"
+#include "nu_miscutil.h"
 
 #define YEAR0       1900
 //#define EPOCH_YR    1970
@@ -111,6 +112,12 @@ void rtc_write(time_t t)
     rtc_datetime.u32TimeScale   = RTC_CLOCK_24;
     
     RTC_SetDateAndTime(&rtc_datetime);
+    
+    // FIXME: delay requirement?
+    uint32_t delay = SystemCoreClock / NU_MAX(__LXT, __LIRC) + 1;
+    for(; delay > 0; delay --) {
+        __NOP();
+    }
 }
 
 #endif

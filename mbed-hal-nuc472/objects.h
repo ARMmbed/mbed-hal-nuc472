@@ -46,7 +46,7 @@ struct port_s {
 
 struct analogin_s {
     ADCName adc;
-    PinName pin;
+    //PinName pin;
 };
 
 struct serial_s {
@@ -82,13 +82,6 @@ struct spi_s {
     //PinName pin_sclk;
     //PinName pin_ssel;
     
-    //uint32_t bits;
-    //uint32_t cpol;
-    //uint32_t cpha;
-    //uint32_t mode;
-    //uint32_t nss;
-    //uint32_t br_presc;
-    
     //void        (*vec)(void);
     
 #if DEVICE_SPI_ASYNCH
@@ -115,14 +108,12 @@ struct i2c_s {
 
 struct pwmout_s {
     PWMName pwm;
-    PinName pin;
-    uint32_t period;
-    uint32_t pulse;
+    //PinName pin;
+    uint32_t period_us;
+    uint32_t pulsewidth_us;
 };
 
 struct sleep_s {
-    //mcg_clock_select_t mcg_clock;
-    uint32_t xxx;
 };
 
 #ifdef __cplusplus

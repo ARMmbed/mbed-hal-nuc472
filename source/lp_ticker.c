@@ -24,7 +24,7 @@
 
 #define TMR_CLK_FREQ        MINAR_PLATFORM_TIME_BASE
 
-static void tmr1_vec(void);
+static void tmr2_vec(void);
 
 static int lp_ticker_inited = 0;
 static volatile uint32_t counter_tick = 0;
@@ -32,15 +32,15 @@ static volatile uint32_t wakeup_tick = (uint32_t) -1;
 
 // NOTE: To wake the system from power down mode, timer clock source must be ether LXT or LIRC.
 // NOTE: TIMER_1 for tick and wakeup
-static const struct nu_modinit_s timer1_modinit = {TIMER_1, TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_LIRC, 0, TMR1_RST, TMR1_IRQn, tmr1_vec};
+static const struct nu_modinit_s timer2_modinit = {TIMER_2, TMR2_MODULE, CLK_CLKSEL1_TMR2SEL_LIRC, 0, TMR2_RST, TMR2_IRQn, tmr2_vec};
 
 #define TMR_CMP_MIN         2
 #define TMR_CMP_MAX         0xFFFFFFu
 
-static void tmr1_vec(void)
+static void tmr2_vec(void)
 {
-    TIMER_ClearIntFlag((TIMER_T *) timer1_modinit.modname);
-    TIMER_ClearWakeupFlag((TIMER_T *) timer1_modinit.modname);
+    TIMER_ClearIntFlag((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
+    TIMER_ClearWakeupFlag((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
 }
 
 void lp_ticker_init(void)
@@ -53,34 +53,34 @@ void lp_ticker_init(void)
     lp_ticker_inited = 1;
     
     // Reset module
-    SYS_ResetModule(timer1_modinit.rsetidx);
+    SYS_ResetModule(timer2_modinit.rsetidx);
     
     // Select IP clock source
-    CLK_SetModuleClock(timer1_modinit.clkidx, timer1_modinit.clksrc, timer1_modinit.clkdiv);
+    CLK_SetModuleClock(timer2_modinit.clkidx, timer2_modinit.clksrc, timer2_modinit.clkdiv);
     // Enable IP clock
-    CLK_EnableModuleClock(timer1_modinit.clkidx);
+    CLK_EnableModuleClock(timer2_modinit.clkidx);
 
     // Configure clock
-    uint32_t clk_timer1 = TIMER_GetModuleClock((TIMER_T *) timer1_modinit.modname);
-    uint32_t prescale_timer1 = clk_timer1 / TMR_CLK_FREQ - 1;
-    MBED_ASSERT((prescale_timer1 != (uint32_t) -1) && prescale_timer1 <= 127);
-    uint32_t cmp_timer1 = wakeup_tick;
-    MBED_ASSERT(cmp_timer1 >= TMR_CMP_MIN && cmp_timer1 <= TMR_CMP_MAX);
+    uint32_t clk_timer2 = TIMER_GetModuleClock((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
+    uint32_t prescale_timer2 = clk_timer2 / TMR_CLK_FREQ - 1;
+    MBED_ASSERT((prescale_timer2 != (uint32_t) -1) && prescale_timer2 <= 127);
+    uint32_t cmp_timer2 = wakeup_tick;
+    MBED_ASSERT(cmp_timer2 >= TMR_CMP_MIN && cmp_timer2 <= TMR_CMP_MAX);
     // Continuous mode
-    ((TIMER_T *) timer1_modinit.modname)->CTL = TIMER_CONTINUOUS_MODE | prescale_timer1 | TIMER_CTL_CNTDATEN_Msk;
-    ((TIMER_T *) timer1_modinit.modname)->CMP = cmp_timer1;
+    ((TIMER_T *) NU_MODBASE(timer2_modinit.modname))->CTL = TIMER_CONTINUOUS_MODE | prescale_timer2 | TIMER_CTL_CNTDATEN_Msk;
+    ((TIMER_T *) NU_MODBASE(timer2_modinit.modname))->CMP = cmp_timer2;
     
     // Set vector
-    NVIC_SetVector(timer1_modinit.irq_n, (uint32_t) timer1_modinit.var);
-    NVIC_EnableIRQ(timer1_modinit.irq_n);
-    TIMER_EnableInt((TIMER_T *) timer1_modinit.modname);
-    TIMER_EnableWakeup((TIMER_T *) timer1_modinit.modname);
+    NVIC_SetVector(timer2_modinit.irq_n, (uint32_t) timer2_modinit.var);
+    NVIC_EnableIRQ(timer2_modinit.irq_n);
+    TIMER_EnableInt((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
+    TIMER_EnableWakeup((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
     
     // Schedule wakeup to match semantics of lp_ticker_get_compare_match()
     lp_ticker_set_interrupt(lp_ticker_read(), wakeup_tick);
     
     // Start timer
-    TIMER_Start((TIMER_T *) timer1_modinit.modname);
+    TIMER_Start((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
 }
 
 uint32_t lp_ticker_read()
@@ -89,7 +89,7 @@ uint32_t lp_ticker_read()
         lp_ticker_init();
     }
     
-    counter_tick = TIMER_GetCounter((TIMER_T *) timer1_modinit.modname);
+    counter_tick = TIMER_GetCounter((TIMER_T *) NU_MODBASE(timer2_modinit.modname));
     return counter_tick;
 }
 
@@ -109,9 +109,9 @@ void lp_ticker_set_interrupt(uint32_t now, uint32_t time)
     wakeup_tick = time;
     
     //uint32_t wakeup_len_us = (time > now) ? (time - now) : (uint32_t) ((uint64_t) time + 0xFFFFFFFFu - now);
-    uint32_t cmp_timer1 = wakeup_tick;
-    MBED_ASSERT(cmp_timer1 >= TMR_CMP_MIN && cmp_timer1 <= TMR_CMP_MAX);
-    ((TIMER_T *) timer1_modinit.modname)->CMP = cmp_timer1;
+    uint32_t cmp_timer2 = wakeup_tick;
+    MBED_ASSERT(cmp_timer2 >= TMR_CMP_MIN && cmp_timer2 <= TMR_CMP_MAX);
+    ((TIMER_T *) NU_MODBASE(timer2_modinit.modname))->CMP = cmp_timer2;
 }
 
 void lp_ticker_sleep_until(uint32_t now, uint32_t time)

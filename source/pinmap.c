@@ -25,11 +25,11 @@
 void pin_function(PinName pin, int data)
 {
     MBED_ASSERT(pin != (PinName)NC);
-    uint32_t pin_index = PINNAME_TO_PIN(pin);
-    uint32_t port_index = PINNAME_TO_PORT(pin);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(pin);
     __IO uint32_t *GPx_MFPx = ((__IO uint32_t *) &SYS->GPA_MFPL) + port_index * 2 + (pin_index / 8);
-    //uint32_t MFP_Pos = MFP_POS(pin_index);
-    uint32_t MFP_Msk = MFP_MSK(pin_index);
+    //uint32_t MFP_Pos = NU_MFP_POS(pin_index);
+    uint32_t MFP_Msk = NU_MFP_MSK(pin_index);
     
     // E.g.: SYS->GPA_MFPL  = (SYS->GPA_MFPL & (~SYS_GPA_MFPL_PA0MFP_Msk) ) | SYS_GPA_MFPL_PA0MFP_SC0_CD  ;
     *GPx_MFPx  = (*GPx_MFPx & (~MFP_Msk)) | data;
@@ -50,9 +50,9 @@ void pin_function(PinName pin, int data)
 void pin_mode(PinName pin, PinMode mode)
 {
     MBED_ASSERT(pin != (PinName)NC);
-    uint32_t pin_index = PINNAME_TO_PIN(pin);
-    uint32_t port_index = PINNAME_TO_PORT(pin);
-    GPIO_T *gpio_base = PORT_BASE(port_index);
+    uint32_t pin_index = NU_PINNAME_TO_PIN(pin);
+    uint32_t port_index = NU_PINNAME_TO_PORT(pin);
+    GPIO_T *gpio_base = NU_PORT_BASE(port_index);
     
     uint32_t mode_intern = GPIO_MODE_INPUT;
     

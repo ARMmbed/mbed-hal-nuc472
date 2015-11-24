@@ -16,6 +16,7 @@
 
 #include "cmsis.h"
 #include "mbed-hal/init_api.h"
+#include "mbed-hal/analogin_api.h"
 
 void mbed_hal_init(void)
 {
@@ -56,6 +57,11 @@ void mbed_hal_init(void)
     /* Select IP clock source */
     //CLK_SetModuleClock(UART0_MODULE,CLK_CLKSEL1_UARTSEL_HXT,CLK_CLKDIV0_UART(1));
 
+#if DEVICE_ANALOGIN
+    /* Vref connect to AVDD */
+    SYS->VREFCTL = (SYS->VREFCTL & ~SYS_VREFCTL_VREFCTL_Msk) | SYS_VREFCTL_VREF_AVDD;
+#endif
+    
     /* Update System Core Clock */
     /* User can use SystemCoreClockUpdate() to calculate SystemCoreClock. */
     SystemCoreClockUpdate();

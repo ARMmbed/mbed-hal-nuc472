@@ -147,13 +147,13 @@ void spi_free(spi_t *obj)
     }
 #endif
 
-    SPI_Close((SPI_T *) obj->spi.spi);
+    SPI_Close((SPI_T *) NU_MODBASE(obj->spi.spi));
     
     const struct nu_modinit_s *modinit = get_modinit(obj->spi.spi, spi_modinit_tab);
     MBED_ASSERT(modinit != NULL);
     MBED_ASSERT(modinit->modname == obj->spi.spi);
     
-    SPI_DisableInt(((SPI_T *) modinit->modname), (SPI_FIFO_RXOVIEN_MASK | SPI_FIFO_RXTHIEN_MASK | SPI_FIFO_TXTHIEN_MASK));
+    SPI_DisableInt(((SPI_T *) NU_MODBASE(obj->spi.spi)), (SPI_FIFO_RXOVIEN_MASK | SPI_FIFO_RXTHIEN_MASK | SPI_FIFO_TXTHIEN_MASK));
     NVIC_DisableIRQ(modinit->irq_n);
     
     // Disable IP clock
@@ -165,7 +165,7 @@ void spi_format(spi_t *obj, int bits, int mode, spi_bitorder_t order)
 {
     MBED_ASSERT(bits >= NU_SPI_FRAME_MIN && bits <= NU_SPI_FRAME_MAX);
     
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     SPI_Open(spi_base,
         SPI_MASTER,
         (mode == 0) ? SPI_MODE_0 : (mode == 1) ? SPI_MODE_1 : (mode == 2) ? SPI_MODE_2 : SPI_MODE_3,
@@ -176,13 +176,13 @@ void spi_format(spi_t *obj, int bits, int mode, spi_bitorder_t order)
 
 void spi_frequency(spi_t *obj, int hz)
 {
-    SPI_SetBusClock((SPI_T *) obj->spi.spi, hz);
+    SPI_SetBusClock((SPI_T *) NU_MODBASE(obj->spi.spi), hz);
 }
 
 
 int spi_master_write(spi_t *obj, int value)
 {
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     // NOTE: Data in receive FIFO can be read out via ICE.
     SPI_ENABLE(spi_base);
@@ -224,7 +224,7 @@ void spi_master_transfer(spi_t *obj, void *tx, size_t tx_length, void *rx, size_
     spi_enable_event(obj, event, 1);
     spi_buffer_set(obj, tx, tx_length, rx, rx_length);
             
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     SPI_ENABLE(spi_base);
     
     if (obj->spi.dma_usage == DMA_USAGE_NEVER) {
@@ -285,8 +285,8 @@ void spi_master_transfer(spi_t *obj, void *tx, size_t tx_length, void *rx, size_
         // Start tx/rx DMA transfer
         spi_enable_vector_interrupt(obj, handler, 1);
         // NOTE: It is safer to start rx DMA first and then tx DMA. Otherwise, receive FIFO is subject to overflow by tx DMA.
-        SPI_TRIGGER_RX_PDMA(((SPI_T *) obj->spi.spi));
-        SPI_TRIGGER_TX_PDMA(((SPI_T *) obj->spi.spi));
+        SPI_TRIGGER_RX_PDMA(((SPI_T *) NU_MODBASE(obj->spi.spi)));
+        SPI_TRIGGER_TX_PDMA(((SPI_T *) NU_MODBASE(obj->spi.spi)));
         spi_master_enable_interrupt(obj, 1);
     }
 }
@@ -299,7 +299,7 @@ void spi_master_transfer(spi_t *obj, void *tx, size_t tx_length, void *rx, size_
  */
 void spi_abort_asynch(spi_t *obj)
 {
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     if (obj->spi.dma_usage != DMA_USAGE_NEVER) {
         // Receive FIFO Overrun in case of tx length > rx length on DMA way
@@ -313,7 +313,7 @@ void spi_abort_asynch(spi_t *obj)
             //PDMA_STOP(obj->spi.dma_chn_id_tx);
             PDMA->CHCTL &= ~(1 << obj->spi.dma_chn_id_tx);
         }
-        SPI_DISABLE_TX_PDMA(((SPI_T *) obj->spi.spi));
+        SPI_DISABLE_TX_PDMA(((SPI_T *) NU_MODBASE(obj->spi.spi)));
         
         if (obj->spi.dma_chn_id_rx != DMA_ERROR_OUT_OF_CHANNELS) {
             PDMA_DisableInt(obj->spi.dma_chn_id_rx, 0);
@@ -321,7 +321,7 @@ void spi_abort_asynch(spi_t *obj)
             //PDMA_STOP(obj->spi.dma_chn_id_rx);
             PDMA->CHCTL &= ~(1 << obj->spi.dma_chn_id_rx);
         }
-        SPI_DISABLE_RX_PDMA(((SPI_T *) obj->spi.spi));
+        SPI_DISABLE_RX_PDMA(((SPI_T *) NU_MODBASE(obj->spi.spi)));
     }
     
     // Necessary for both interrupt way and DMA way
@@ -354,7 +354,7 @@ uint32_t spi_irq_handler_asynch(spi_t *obj)
 
 uint8_t spi_active(spi_t *obj)
 {
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     // FIXME
     /*
     if ((obj->rx_buff.buffer && obj->rx_buff.pos < obj->rx_buff.length)
@@ -373,13 +373,13 @@ uint8_t spi_active(spi_t *obj)
 static int spi_writeable(spi_t * obj)
 {
     // Receive FIFO must not be full to avoid receive FIFO overflow on next transmit/receive
-    //return (! SPI_GET_TX_FIFO_FULL_FLAG(((SPI_T *) obj->spi.spi))) && (SPI_GET_RX_FIFO_COUNT(((SPI_T *) obj->spi.spi)) < NU_SPI_FIFO_DEPTH);
-    return (! SPI_GET_TX_FIFO_FULL_FLAG(((SPI_T *) obj->spi.spi)));
+    //return (! SPI_GET_TX_FIFO_FULL_FLAG(((SPI_T *) NU_MODBASE(obj->spi.spi)))) && (SPI_GET_RX_FIFO_COUNT(((SPI_T *) NU_MODBASE(obj->spi.spi))) < NU_SPI_FIFO_DEPTH);
+    return (! SPI_GET_TX_FIFO_FULL_FLAG(((SPI_T *) NU_MODBASE(obj->spi.spi))));
 }
 
 static int spi_readable(spi_t * obj)
 {
-    return ! SPI_GET_RX_FIFO_EMPTY_FLAG(((SPI_T *) obj->spi.spi));
+    return ! SPI_GET_RX_FIFO_EMPTY_FLAG(((SPI_T *) NU_MODBASE(obj->spi.spi)));
 }
 
 static void spi_enable_event(spi_t *obj, uint32_t event, uint8_t enable)
@@ -387,7 +387,7 @@ static void spi_enable_event(spi_t *obj, uint32_t event, uint8_t enable)
     obj->spi.event &= ~SPI_EVENT_ALL;
     obj->spi.event |= (event & SPI_EVENT_ALL);
     if (event & SPI_EVENT_RX_OVERFLOW) {
-        SPI_EnableInt((SPI_T *) obj->spi.spi, SPI_FIFO_RXOVIEN_MASK);
+        SPI_EnableInt((SPI_T *) NU_MODBASE(obj->spi.spi), SPI_FIFO_RXOVIEN_MASK);
     }
 }
 
@@ -409,7 +409,7 @@ static void spi_enable_vector_interrupt(spi_t *obj, uint32_t handler, uint8_t en
 
 static void spi_master_enable_interrupt(spi_t *obj, uint8_t enable)
 {   
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     if (enable) {
         SPI_SetFIFOThreshold(spi_base, 4, 4);
@@ -424,7 +424,7 @@ static void spi_master_enable_interrupt(spi_t *obj, uint8_t enable)
 
 static uint32_t spi_event_check(spi_t *obj)
 {
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     uint32_t event = 0;
     
     if (obj->spi.dma_usage == DMA_USAGE_NEVER) {
@@ -476,7 +476,7 @@ static uint32_t spi_master_write_asynch(spi_t *obj, uint32_t tx_limit)
     uint8_t data_width = spi_get_data_width(obj);
     uint8_t bytes_per_word = (data_width + 7) / 8;
     uint8_t *tx = (uint8_t *)(obj->tx_buff.buffer) + bytes_per_word * obj->tx_buff.pos;
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     while ((n_words < max_tx) && spi_writeable(obj)) {
         if (spi_is_tx_complete(obj)) {
@@ -528,7 +528,7 @@ static uint32_t spi_master_read_asynch(spi_t *obj)
     uint8_t data_width = spi_get_data_width(obj);
     uint8_t bytes_per_word = (data_width + 7) / 8;
     uint8_t *rx = (uint8_t *)(obj->rx_buff.buffer) + bytes_per_word * obj->rx_buff.pos;
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     while ((n_words < max_rx) && spi_readable(obj)) {
         if (spi_is_rx_complete(obj)) {
@@ -600,7 +600,7 @@ static void spi_check_dma_usage(DMAUsage *dma_usage, int *dma_ch_tx, int *dma_ch
 
 static uint8_t spi_get_data_width(spi_t *obj)
 {    
-    SPI_T *spi_base = (SPI_T *) obj->spi.spi;
+    SPI_T *spi_base = (SPI_T *) NU_MODBASE(obj->spi.spi);
     
     return ((spi_base->CTL & SPI_CTL_DWIDTH_Msk) >> SPI_CTL_DWIDTH_Pos);
 }
@@ -609,7 +609,7 @@ static int spi_is_tx_complete(spi_t *obj)
 {
     // ???: Exclude tx fifo empty check due to no such interrupt on DMA way
     return (obj->tx_buff.pos == obj->tx_buff.length);
-    //return (obj->tx_buff.pos == obj->tx_buff.length && SPI_GET_TX_FIFO_EMPTY_FLAG(((SPI_T *) obj->spi.spi)));
+    //return (obj->tx_buff.pos == obj->tx_buff.length && SPI_GET_TX_FIFO_EMPTY_FLAG(((SPI_T *) NU_MODBASE(obj->spi.spi))));
 }
 
 static int spi_is_rx_complete(spi_t *obj)
