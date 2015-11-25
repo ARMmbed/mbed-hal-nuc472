@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+#include "mbed-hal/init_api.h"
 #include "mbed-hal/serial_api.h"
 
 #if DEVICE_SERIAL
 
 #include "cmsis.h"
 #include "mbed-drivers/mbed_error.h"
+#include "mbed-drivers/mbed_assert.h"
 #include "PeripheralPins.h"
 #include "nu_modutil.h"
 
@@ -163,7 +165,11 @@ static const struct nu_modinit_s uart_modinit_tab[] = {
     {NC, 0, 0, 0, 0, (IRQn_Type) 0, NULL}
 };
 
-void serial_init(serial_t *obj, PinName tx, PinName rx) {
+void serial_init(serial_t *obj, PinName tx, PinName rx)
+{
+    // NOTE: serial_init() gets called from _sys_open() timing of which is before main()/mbed_hal_init().
+    mbed_hal_init();
+    
     // Determine which UART_x the pins are used for
     uint32_t uart_tx = pinmap_peripheral(tx, PinMap_UART_TX);
     uint32_t uart_rx = pinmap_peripheral(rx, PinMap_UART_RX);

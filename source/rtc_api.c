@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include "mbed-hal/rtc_api.h"
 
 #if DEVICE_RTC
@@ -111,13 +111,9 @@ void rtc_write(time_t t)
     rtc_datetime.u32Second      = timeinfo->tm_sec;
     rtc_datetime.u32TimeScale   = RTC_CLOCK_24;
     
+    // NOTE: Timing issue with write to RTC registers. This delay is empirical, not rational.
     RTC_SetDateAndTime(&rtc_datetime);
-    
-    // FIXME: delay requirement?
-    uint32_t delay = SystemCoreClock / NU_MAX(__LXT, __LIRC) + 1;
-    for(; delay > 0; delay --) {
-        __NOP();
-    }
+    nu_nop(6000);
 }
 
 #endif

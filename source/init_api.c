@@ -18,8 +18,18 @@
 #include "mbed-hal/init_api.h"
 #include "mbed-hal/analogin_api.h"
 
+// NOTE: Ensurce mbed_hal_init() will get called before C++ global object constructor.
+void mbed_hal_init_forced(void) __attribute__((constructor(101)));
+
 void mbed_hal_init(void)
 {
+    // NOTE: Support singleton semantics to be called from other init functions
+    static int inited = 0;
+    if (inited) {
+        return;
+    }
+    inited = 1;
+    
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init System Clock                                                                                       */
     /*---------------------------------------------------------------------------------------------------------*/
@@ -68,4 +78,9 @@ void mbed_hal_init(void)
 
     /* Lock protected registers */
     SYS_LockReg();
+}
+
+void mbed_hal_init_forced(void)
+{
+    mbed_hal_init();
 }

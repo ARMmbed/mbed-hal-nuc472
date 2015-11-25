@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include "mbed-hal/us_ticker_api.h"
 #include "mbed-drivers/mbed_assert.h"
 #include "nu_modutil.h"
@@ -34,8 +34,8 @@ static volatile uint32_t counter_major = 0;
 static volatile int cd_major_minor = 0;
 static volatile int cd_minor = 0;
 
-// NOTE: PCLK is set up in mbed_hal_init(), but invocation of it is after us_ticker_init() due to C++ global object. Replace with HIRC.
-//CLK_CLKSEL1_TMR0SEL_PCLK --> CLK_CLKSEL1_TMR0SEL_HIRC
+// NOTE: PCLK is set up in mbed_hal_init(), but invocation of it is after us_ticker_init() due to C++ global object.
+//       CLK_CLKSEL1_TMR0SEL_PCLK --> CLK_CLKSEL1_TMR0SEL_HIRC
 // NOTE: TIMER_0 for normal counter, TIMER_1 for countdown.
 static const struct nu_modinit_s timer0_modinit = {TIMER_0, TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0, TMR0_RST, TMR0_IRQn, tmr0_vec};
 static const struct nu_modinit_s timer1_modinit = {TIMER_1, TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_HIRC, 0, TMR1_RST, TMR1_IRQn, tmr1_vec};
@@ -90,7 +90,12 @@ uint32_t us_ticker_read()
         us_ticker_init();
     }
     
-    uint32_t ts = counter_major * US_PER_TMR_INT + TIMER_GetCounter((TIMER_T *) NU_MODBASE(timer0_modinit.modname));
+    TIMER_T * timer0_base = (TIMER_T *) NU_MODBASE(timer0_modinit.modname);
+    
+    // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT may not reset to 0 immediately. Add check code to avoid instant error.
+    while (timer0_base->CMP == TIMER_GetCounter(timer0_base));
+    
+    uint32_t ts = counter_major * US_PER_TMR_INT + TIMER_GetCounter(timer0_base);
     return ts;
 }
 

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include "mbed-hal/lp_ticker_api.h"
 
 #if DEVICE_LOWPOWERTIMER
 
 #include "sleep_api.h"
 #include "nu_modutil.h"
+#include "nu_miscutil.h"
 //#include "uvisor-lib/uvisor-lib.h"
 
 #define TMR_CLK_FREQ        MINAR_PLATFORM_TIME_BASE
@@ -48,10 +49,11 @@ void lp_ticker_init(void)
     if (lp_ticker_inited) {
         return;
     }
-    counter_tick = 0;
-    wakeup_tick = TMR_CMP_MAX;
     lp_ticker_inited = 1;
     
+    counter_tick = 0;
+    wakeup_tick = TMR_CMP_MAX;
+
     // Reset module
     SYS_ResetModule(timer2_modinit.rsetidx);
     
