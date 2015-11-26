@@ -18,6 +18,7 @@
 
 #if DEVICE_RTC
 
+#include "mbed-drivers/wait_api.h"
 #include "mbed-drivers/mbed_error.h"
 #include "nu_modutil.h"
 #include "nu_miscutil.h"
@@ -113,7 +114,8 @@ void rtc_write(time_t t)
     
     // NOTE: Timing issue with write to RTC registers. This delay is empirical, not rational.
     RTC_SetDateAndTime(&rtc_datetime);
-    nu_nop(6000);
+    //nu_nop(6000);
+    wait_us(100);
 }
 
 #endif

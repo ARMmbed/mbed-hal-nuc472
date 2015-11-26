@@ -110,6 +110,14 @@ void lp_ticker_set_interrupt(uint32_t now, uint32_t time)
 {
     wakeup_tick = time;
     
+    // Clamp to the range [TMR_CMP_MIN, TMR_CMP_MAX]
+    while (wakeup_tick > TMR_CMP_MAX) {
+        wakeup_tick -= TMR_CMP_MAX;
+    }
+    if (wakeup_tick < TMR_CMP_MIN) {
+        wakeup_tick = TMR_CMP_MIN;
+    }
+    
     //uint32_t wakeup_len_us = (time > now) ? (time - now) : (uint32_t) ((uint64_t) time + 0xFFFFFFFFu - now);
     uint32_t cmp_timer2 = wakeup_tick;
     MBED_ASSERT(cmp_timer2 >= TMR_CMP_MIN && cmp_timer2 <= TMR_CMP_MAX);
