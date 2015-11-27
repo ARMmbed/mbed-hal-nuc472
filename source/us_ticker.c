@@ -114,12 +114,8 @@ void us_ticker_set_interrupt(timestamp_t timestamp)
     TIMER_Stop((TIMER_T *) NU_MODBASE(timer1_modinit.modname));
     
     int delta = (int) (timestamp - us_ticker_read());
-    if (delta <= 0) {
-        // This event was in the past:
-        us_ticker_irq_handler();
-        return;
-    }
-    cd_major_minor = delta;
+    // NOTE: If this event was in the past, arm an interrupt to be triggered immediately.
+    cd_major_minor = NU_MAX(TMR_CMP_MIN, delta);
     
     us_ticker_arm_cd();
 }
