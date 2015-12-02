@@ -85,6 +85,9 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
     MBED_ASSERT(pin_index < NU_MAX_PIN_PER_PORT);
     var->obj_arr[pin_index] = obj;
     
+    // NOTE: InterruptIn requires IRQ enabled by default.
+    gpio_irq_enable(obj);
+    
     return 0;
 }
 
