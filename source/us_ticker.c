@@ -20,7 +20,8 @@
 #include "nu_miscutil.h"
 
 // NOTE: mbed-drivers-test-timeout test requires 100 us timer granularity.
-#define US_PER_TMR_INT      (1000 * 10)
+// NOTE: us_ticker will alarm the system for its counting, so make the counting period as long as possible for better power saving.
+#define US_PER_TMR_INT      (1000 * 1000 * 10)
 #define TMR_FIRE_FREQ       (1000 * 1000 / US_PER_TMR_INT)
 #define US_PER_TMR_CLK      1
 #define TMR_CLK_FREQ        (1000 * 1000 / US_PER_TMR_CLK)
