@@ -1,6 +1,6 @@
 {
   "name": "mbed-hal-nuc472",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "mbed HAL for Nuvoton NUC472 MCUs",
   "private": true,
   "keywords": [
@@ -30,8 +30,5 @@
     "mbed-hal": "*"
   },
   "targetDependencies": {
-    "nutiny": {
-      "mbed-hal-nuc472-nutiny": "^1.0.0"
-    }
   }
 }
