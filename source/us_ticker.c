@@ -35,11 +35,14 @@ static volatile uint32_t counter_major = 0;
 static volatile int cd_major_minor = 0;
 static volatile int cd_minor = 0;
 
-// NOTE: PCLK is set up in mbed_hal_init(), but invocation of it is after us_ticker_init() due to C++ global object.
-//       CLK_CLKSEL1_TMR0SEL_PCLK --> CLK_CLKSEL1_TMR0SEL_HIRC
+// NOTE: PCLK is set up in mbed_hal_init(), invocation of which must be before C++ global object constructor. See init_api.c for details.
+// NOTE: Choose clock source of timer:
+//       1. HIRC: Be the most accurate but might cause unknown HardFault.
+//       2. HXT: Less accurate and cannot pass mbed-drivers test.
+//       3. PCLK(HXT): Less accurate but can pass mbed-drivers test.
 // NOTE: TIMER_0 for normal counter, TIMER_1 for countdown.
-static const struct nu_modinit_s timer0_modinit = {TIMER_0, TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0, TMR0_RST, TMR0_IRQn, tmr0_vec};
-static const struct nu_modinit_s timer1_modinit = {TIMER_1, TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_HIRC, 0, TMR1_RST, TMR1_IRQn, tmr1_vec};
+static const struct nu_modinit_s timer0_modinit = {TIMER_0, TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_PCLK, 0, TMR0_RST, TMR0_IRQn, tmr0_vec};
+static const struct nu_modinit_s timer1_modinit = {TIMER_1, TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK, 0, TMR1_RST, TMR1_IRQn, tmr1_vec};
 
 #define TMR_CMP_MIN         2
 #define TMR_CMP_MAX         0xFFFFFFu
@@ -92,12 +95,34 @@ uint32_t us_ticker_read()
     }
     
     TIMER_T * timer0_base = (TIMER_T *) NU_MODBASE(timer0_modinit.modname);
+        
+    do {        
+        uint32_t major_minor;
+        uint32_t minor;
+        
+        uint32_t _state = __get_PRIMASK();
+        __disable_irq();
+        
+        // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT doesn't change to 0 for one tick time.
+        minor = TIMER_GetCounter(timer0_base);
+        if (minor == timer0_base->CMP) {
+            if (! (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk)) {
+                minor = 0;
+            }
+        }
+        else {
+            if (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) {
+                minor = timer0_base->CMP;
+            }
+        }
     
-    // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT may not reset to 0 immediately. Add check code to avoid instant error.
-    while (timer0_base->CMP == TIMER_GetCounter(timer0_base));
-    
-    uint32_t ts = counter_major * US_PER_TMR_INT + TIMER_GetCounter(timer0_base);
-    return ts;
+        major_minor = counter_major * US_PER_TMR_INT + minor;
+        
+        __set_PRIMASK(_state);
+        
+        return major_minor;
+    }
+    while (0);
 }
 
 void us_ticker_disable_interrupt(void)
