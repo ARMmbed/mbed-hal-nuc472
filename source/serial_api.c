@@ -217,7 +217,7 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 #endif
 
     // For stdio management
-    if (obj->serial.uart == STDIO_UART) {
+    if (obj == &stdio_uart) {
         stdio_uart_inited = 1;
         /* NOTE: Not required anymore because stdio_uart will be manually initialized in mbed-drivers/source/retarget.cpp from mbed beta */
         //memcpy(&stdio_uart, obj, sizeof(serial_t));
@@ -251,7 +251,7 @@ void serial_free(serial_t *obj)
     
     ((struct nu_uart_var *) modinit->var)->obj = NULL;
     
-    if (obj->serial.uart == STDIO_UART) {
+    if (obj == &stdio_uart) {
         stdio_uart_inited = 0;
     }
 }
