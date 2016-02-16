@@ -128,7 +128,7 @@ uint16_t analogin_read_u16(analogin_t *obj)
     // Just 12 bits are effective. Convert to 16 bits.
     // conv_res_12: 0000 b11b10b9b8 b7b6b5b4 b3b2b1b0
     // conv_res_16: b11b10b9b8 b7b6b5b4 b3b2b1b0 b11b10b9b8
-    uint16_t conv_res_16 = (conv_res_12 << 8) | (conv_res_12 >> 16);
+    uint16_t conv_res_16 = (conv_res_12 << 4) | (conv_res_12 >> 8);
     
     return conv_res_16;
 }
