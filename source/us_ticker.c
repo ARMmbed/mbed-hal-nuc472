@@ -32,8 +32,8 @@ static void us_ticker_arm_cd(void);
 
 static int us_ticker_inited = 0;
 static volatile uint32_t counter_major = 0;
-static volatile int cd_major_minor = 0;
-static volatile int cd_minor = 0;
+static volatile int cd_major_minor_us = 0;
+static volatile int cd_minor_us = 0;
 
 // NOTE: PCLK is set up in mbed_hal_init(), invocation of which must be before C++ global object constructor. See init_api.c for details.
 // NOTE: Choose clock source of timer:
@@ -54,8 +54,8 @@ void us_ticker_init(void)
     }
     
     counter_major = 0;
-    cd_major_minor = 0;
-    cd_minor = 0;
+    cd_major_minor_us = 0;
+    cd_minor_us = 0;
     us_ticker_inited = 1;
     
     // Reset IP
@@ -96,31 +96,31 @@ uint32_t us_ticker_read()
     
     TIMER_T * timer0_base = (TIMER_T *) NU_MODBASE(timer0_modinit.modname);
         
-    do {        
-        uint32_t major_minor;
-        uint32_t minor;
+    do {
+        uint32_t major_minor_us;
+        uint32_t minor_us;
         
         uint32_t _state = __get_PRIMASK();
         __disable_irq();
         
         // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT doesn't change to 0 for one tick time.
-        minor = TIMER_GetCounter(timer0_base);
-        if (minor == timer0_base->CMP) {
+        minor_us = TIMER_GetCounter(timer0_base) * US_PER_TMR_CLK;
+        if (minor_us == timer0_base->CMP * US_PER_TMR_CLK) {
             if (! (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk)) {
-                minor = 0;
+                minor_us = 0;
             }
         }
         else {
             if (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) {
-                minor = timer0_base->CMP;
+                minor_us = timer0_base->CMP * US_PER_TMR_CLK;
             }
         }
     
-        major_minor = counter_major * US_PER_TMR_INT + minor;
+        major_minor_us = counter_major * US_PER_TMR_INT + minor_us;
         
         __set_PRIMASK(_state);
-        
-        return major_minor;
+
+        return major_minor_us;
     }
     while (0);
 }
@@ -141,7 +141,7 @@ void us_ticker_set_interrupt(timestamp_t timestamp)
     
     int delta = (int) (timestamp - us_ticker_read());
     // NOTE: If this event was in the past, arm an interrupt to be triggered immediately.
-    cd_major_minor = NU_MAX(TMR_CMP_MIN, delta);
+    cd_major_minor_us = NU_MAX(TMR_CMP_MIN, delta);
     
     us_ticker_arm_cd();
 }
@@ -155,8 +155,8 @@ static void tmr0_vec(void)
 static void tmr1_vec(void)
 {
     TIMER_ClearIntFlag((TIMER_T *) NU_MODBASE(timer1_modinit.modname));
-    cd_major_minor -= cd_minor;
-    if (cd_major_minor <= 0) {
+    cd_major_minor_us -= cd_minor_us;
+    if (cd_major_minor_us <= 0) {
         // NOTE: us_ticker_set_interrupt() may get called in us_ticker_irq_handler();
         us_ticker_irq_handler();
     }
@@ -175,10 +175,11 @@ static void us_ticker_arm_cd(void)
     uint32_t clk_timer1 = TIMER_GetModuleClock((TIMER_T *) NU_MODBASE(timer1_modinit.modname));
     uint32_t prescale_timer1 = clk_timer1 / TMR_CLK_FREQ - 1;
     MBED_ASSERT((prescale_timer1 != (uint32_t) -1) && prescale_timer1 <= 127);
+    timer1_base->CTL &= ~(TIMER_CTL_OPMODE_Msk | TIMER_CTL_PSC_Msk | TIMER_CTL_CNTDATEN_Msk);
     timer1_base->CTL |= TIMER_ONESHOT_MODE | prescale_timer1 | TIMER_CTL_CNTDATEN_Msk;
     
-    cd_minor = NU_CLAMP(cd_major_minor, TMR_CMP_MIN, TMR_CMP_MAX);
-    timer1_base->CMP = cd_minor;
+    cd_minor_us = NU_CLAMP(cd_major_minor_us, TMR_CMP_MIN * US_PER_TMR_CLK, TMR_CMP_MAX * US_PER_TMR_CLK);
+    timer1_base->CMP = cd_minor_us / US_PER_TMR_CLK;
     
     TIMER_EnableInt(timer1_base);
     TIMER_Start(timer1_base);
