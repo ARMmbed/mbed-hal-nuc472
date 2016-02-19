@@ -22,6 +22,7 @@
 #include "cmsis.h"
 #include "device.h"
 #include "objects.h"
+#include "PeripheralPins.h"
 
 void us_ticker_prepare_sleep(sleep_t *obj);
 void us_ticker_wakeup_from_sleep(sleep_t *obj);
@@ -31,7 +32,10 @@ void mbed_enter_sleep(sleep_t *obj)
     // TODO: TO BE CONTINUED
     
     // Wait until UART FIFO empty to get a cleaner console out
-    while (! UART_IS_TX_EMPTY(((UART_T *) STDIO_UART)));
+    uint32_t uart_stdio = pinmap_peripheral(STDIO_UART_TX, PinMap_UART_TX);
+    if (uart_stdio != NC) {
+        while (! UART_IS_TX_EMPTY(((UART_T *) uart_stdio)));
+    }
     
     // Defaults to powner-down rather than CPU halt for good power saving.
     obj->powerdown = 1;
