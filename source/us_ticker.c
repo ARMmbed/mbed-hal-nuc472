@@ -221,7 +221,17 @@ static void us_ticker_arm_cd(void)
     uint32_t tmr1_clk_freq;
     uint32_t us_per_tmr1_clk;
     
-    if (cd_major_minor_us >= CD_TMR_SEP_US) {
+    /**
+     * Reserve CD_TMR_SEP_US-plus alarm period for hi-res timer
+     * 1. period >= CD_TMR_SEP_US * 2. Divide into two rounds:
+     *    CD_TMR_SEP_US * n (lo-res timer)
+     *    CD_TMR_SEP_US + period % CD_TMR_SEP_US (hi-res timer)
+     * 2. period < CD_TMR_SEP_US * 2. Just one round:
+     *    period (hi-res timer)
+     */
+    if (cd_major_minor_us >= CD_TMR_SEP_US * 2) {
+        cd_minor_us = cd_major_minor_us - cd_major_minor_us % CD_TMR_SEP_US - CD_TMR_SEP_US;
+        
         CLK_SetModuleClock(timer1lores_modinit.clkidx, timer1lores_modinit.clksrc, timer1lores_modinit.clkdiv);
         tmr1_clk_freq = TMR1LORES_CLK_FREQ;
         us_per_tmr1_clk = US_PER_TMR1LORES_CLK;
@@ -229,6 +239,8 @@ static void us_ticker_arm_cd(void)
         cd_hires_tmr_armed = 0;
     }
     else {
+        cd_minor_us = cd_major_minor_us;
+        
         CLK_SetModuleClock(timer1hires_modinit.clkidx, timer1hires_modinit.clksrc, timer1hires_modinit.clkdiv);
         tmr1_clk_freq = TMR1HIRES_CLK_FREQ;
         us_per_tmr1_clk = US_PER_TMR1HIRES_CLK;
@@ -245,7 +257,7 @@ static void us_ticker_arm_cd(void)
     timer1_base->CTL &= ~(TIMER_CTL_OPMODE_Msk | TIMER_CTL_PSC_Msk | TIMER_CTL_CNTDATEN_Msk);
     timer1_base->CTL |= TIMER_ONESHOT_MODE | prescale_timer1 | TIMER_CTL_CNTDATEN_Msk;
     
-    cd_minor_us = NU_CLAMP(cd_major_minor_us, TMR_CMP_MIN * us_per_tmr1_clk, TMR_CMP_MAX * us_per_tmr1_clk);
+    cd_minor_us = NU_CLAMP(cd_minor_us, TMR_CMP_MIN * us_per_tmr1_clk, TMR_CMP_MAX * us_per_tmr1_clk);
     timer1_base->CMP = cd_minor_us / us_per_tmr1_clk;
     
     TIMER_EnableInt(timer1_base);
