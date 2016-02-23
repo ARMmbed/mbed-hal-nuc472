@@ -21,7 +21,7 @@
 
 #if DEVICE_PORTIN || DEVICE_PORTOUT || DEVICE_PORTINOUT
 
-static PinName port_pin(PortName port, int pin_n)
+PinName port_pin(PortName port, int pin_n)
 {
     return (PinName) NU_PORT_N_PIN_TO_PINNAME(port, pin_n);
 }
