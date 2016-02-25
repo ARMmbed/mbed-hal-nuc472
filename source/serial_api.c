@@ -257,11 +257,17 @@ void serial_free(serial_t *obj)
 }
 
 void serial_baud(serial_t *obj, int baudrate) {
+    // Flush Tx FIFO. Otherwise, output data may get lost on this change.
+    while (! UART_IS_TX_EMPTY(((UART_T *) obj->serial.uart)));
+    
     obj->serial.baudrate = baudrate;
     UART_Open((UART_T *) NU_MODBASE(obj->serial.uart), baudrate);
 }
 
 void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_bits) {
+    // Flush Tx FIFO. Otherwise, output data may get lost on this change.
+    while (! UART_IS_TX_EMPTY(((UART_T *) obj->serial.uart)));
+    
     // TODO: Assert for not supported parity and data bits
     obj->serial.databits = data_bits;
     obj->serial.parity = parity;
@@ -284,6 +290,9 @@ void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_b
 
 void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
 {
+    // Flush Tx FIFO. Otherwise, output data may get lost on this change.
+    while (! UART_IS_TX_EMPTY(((UART_T *) obj->serial.uart)));
+    
     const struct nu_modinit_s *modinit = get_modinit(obj->serial.uart, uart_modinit_tab);
     MBED_ASSERT(modinit != NULL);
     MBED_ASSERT(modinit->modname == obj->serial.uart);
