@@ -43,8 +43,12 @@ void mbed_hal_init(void)
     /* Enable LXT for RTC */
     CLK_EnableXtalRC(CLK_PWRCTL_LXTEN_Msk);
 
-    /* Waiting for 12MHz clock ready */
-    CLK_WaitClockReady( CLK_STATUS_HXTSTB_Msk);
+    /* Waiting for External XTAL (4~24 MHz) ready */
+    CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);
+    /* Waiting for LIRC ready */
+    CLK_WaitClockReady(CLK_STATUS_LIRCSTB_Msk);
+    /* Waiting for LXT ready */
+    CLK_WaitClockReady(CLK_STATUS_LXTSTB_Msk);
 
     /* Switch HCLK clock source to HXT */
     CLK_SetHCLK(CLK_CLKSEL0_HCLKSEL_HXT,CLK_CLKDIV0_HCLK(1));
