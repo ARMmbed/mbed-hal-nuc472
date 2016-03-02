@@ -573,7 +573,7 @@ void serial_tx_abort_asynch(serial_t *obj)
             //PDMA_STOP(obj->serial.dma_chn_id_tx);
             PDMA->CHCTL &= ~(1 << obj->serial.dma_chn_id_tx);
         }
-        UART_DisableInt((UART_T *) NU_MODBASE(obj->serial.uart), UART_INTEN_TXPDMAEN_Msk);
+        UART_DISABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_TXPDMAEN_Msk);
     }
     
     // Necessary for both interrupt way and DMA way
@@ -592,7 +592,7 @@ void serial_rx_abort_asynch(serial_t *obj)
             //PDMA_STOP(obj->serial.dma_chn_id_rx);
             PDMA->CHCTL &= ~(1 << obj->serial.dma_chn_id_rx);
         }
-        UART_DisableInt((UART_T *) NU_MODBASE(obj->serial.uart), UART_INTEN_RXPDMAEN_Msk);
+        UART_DISABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_RXPDMAEN_Msk);
     }
     
     // Necessary for both interrupt way and DMA way
@@ -700,13 +700,13 @@ static void serial_rx_enable_event(serial_t *obj, int event, uint8_t enable)
     //if (event & SERIAL_EVENT_RX_OVERRUN_ERROR) {
     //}
     if (event & SERIAL_EVENT_RX_FRAMING_ERROR) {
-        UART_EnableInt(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_RLSIEN_Msk);
+        UART_ENABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_RLSIEN_Msk);
     }
     if (event & SERIAL_EVENT_RX_PARITY_ERROR) {
-        UART_EnableInt(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_RLSIEN_Msk);
+        UART_ENABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_RLSIEN_Msk);
     }
     if (event & SERIAL_EVENT_RX_OVERFLOW) {
-        UART_EnableInt(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_BUFERRIEN_Msk);
+        UART_ENABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_BUFERRIEN_Msk);
     }
     //if (event & SERIAL_EVENT_RX_CHARACTER_MATCH) {
     //}
