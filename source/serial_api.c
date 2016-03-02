@@ -737,10 +737,6 @@ static uint32_t serial_tx_event_check(serial_t *obj)
     
     uint32_t event = 0;
     
-    if (((UART_T *) NU_MODBASE(obj->serial.uart))->FIFOSTS & UART_FIFOSTS_TXOVIF_Msk) {
-        ((UART_T *) NU_MODBASE(obj->serial.uart))->FIFOSTS |= UART_FIFOSTS_TXOVIF_Msk;
-    }
-    
     if (obj->serial.dma_usage_tx == DMA_USAGE_NEVER) {
         serial_write_async(obj);
     }
@@ -838,9 +834,19 @@ static int serial_write_async(serial_t *obj)
     MBED_ASSERT(modinit != NULL);
     MBED_ASSERT(modinit->modname == obj->serial.uart);
     
-    uint32_t tx_fifo_busy = (((UART_T *) NU_MODBASE(obj->serial.uart))->FIFOSTS & UART_FIFOSTS_TXPTR_Msk) >> UART_FIFOSTS_TXPTR_Pos;
-    uint32_t tx_fifo_free = ((struct nu_uart_var *) modinit->var)->fifo_size_tx - tx_fifo_busy;
+    UART_T *uart_base = (UART_T *) NU_MODBASE(obj->serial.uart);
+    
+    uint32_t tx_fifo_max = ((struct nu_uart_var *) modinit->var)->fifo_size_tx;
+    uint32_t tx_fifo_busy = (uart_base->FIFOSTS & UART_FIFOSTS_TXPTR_Msk) >> UART_FIFOSTS_TXPTR_Pos;
+    if (uart_base->FIFOSTS & UART_FIFOSTS_TXFULL_Msk) {
+        tx_fifo_busy = tx_fifo_max;
+    }
+    uint32_t tx_fifo_free = tx_fifo_max - tx_fifo_busy;
     if (tx_fifo_free == 0) {
+        // Simulate clear of the interrupt flag
+        if (obj->serial.inten_msk & UART_INTEN_THREIEN_Msk) {
+            UART_ENABLE_INT(((UART_T *) NU_MODBASE(obj->serial.uart)), UART_INTEN_THREIEN_Msk);
+        }
         return 0;
     }
     
