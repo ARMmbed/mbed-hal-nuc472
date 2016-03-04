@@ -54,8 +54,12 @@ void mbed_enter_sleep(sleep_t *obj)
         SYS_LockReg();
     }
     else {  // CPU halt mode (HIRC/HXT enabled, LIRC/LXT enabled)
-        SCB->SCR = SCB_SCR_SLEEPDEEP_Msk;
+        // NOTE: NUC472's CLK_Idle() will also disable HIRC/HXT.
+        SYS_UnlockReg();
+        SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+        CLK->PWRCTL &= ~CLK_PWRCTL_PDEN_Msk;
         __WFI();
+        SYS_LockReg();
     }
     __NOP();
     __NOP();
