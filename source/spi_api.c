@@ -434,6 +434,8 @@ static uint32_t spi_event_check(spi_t *obj)
     
     if (spi_is_tx_complete(obj) && spi_is_rx_complete(obj)) {
         event |= SPI_EVENT_COMPLETE;
+        // Flush tx FIFO
+        while (spi_base->STATUS & SPI_STATUS_TXCNT_Msk);
     }
     
     // Receive FIFO Overrun
