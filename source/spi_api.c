@@ -328,6 +328,8 @@ void spi_abort_asynch(spi_t *obj)
     spi_enable_vector_interrupt(obj, 0, 0);
     spi_master_enable_interrupt(obj, 0);
     
+    // FIXME: SPI H/W may get out of state without the busy check.
+    while (SPI_IS_BUSY(spi_base));
     SPI_DISABLE(spi_base);
     
     SPI_ClearRxFIFO(spi_base);
@@ -434,8 +436,6 @@ static uint32_t spi_event_check(spi_t *obj)
     
     if (spi_is_tx_complete(obj) && spi_is_rx_complete(obj)) {
         event |= SPI_EVENT_COMPLETE;
-        // Flush tx FIFO
-        while (spi_base->STATUS & SPI_STATUS_TXCNT_Msk);
     }
     
     // Receive FIFO Overrun
