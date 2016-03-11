@@ -20,6 +20,8 @@
 #include "nu_modutil.h"
 #include "nu_miscutil.h"
 
+#define US_PER_TICK             1
+
 // NOTE: mbed-drivers-test-timeout test requires 100 us timer granularity.
 // NOTE: us_ticker will alarm the system for its counting, so make the counting period as long as possible for better power saving.
 #define US_PER_TMR0HIRES_INT    (1000 * 1000 * 10)
@@ -135,7 +137,7 @@ uint32_t us_ticker_read()
         __set_PRIMASK(_state);
 
         // Add power-down compensation
-        return (major_minor_us + pd_comp_us);
+        return (major_minor_us + pd_comp_us) / US_PER_TICK;
     }
     while (0);
 }
@@ -156,7 +158,7 @@ void us_ticker_set_interrupt(timestamp_t timestamp)
     
     int delta = (int) (timestamp - us_ticker_read());
     // NOTE: If this event was in the past, arm an interrupt to be triggered immediately.
-    cd_major_minor_us = NU_MAX(TMR_CMP_MIN, delta);
+    cd_major_minor_us = delta * US_PER_TICK;
     
     us_ticker_arm_cd();
 }
