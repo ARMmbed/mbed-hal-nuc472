@@ -566,6 +566,9 @@ void serial_rx_asynch(serial_t *obj, void *rx, size_t rx_length, uint8_t rx_widt
 
 void serial_tx_abort_asynch(serial_t *obj)
 {
+    // Flush Tx FIFO. Otherwise, output data may get lost on this change.
+    while (! UART_IS_TX_EMPTY(((UART_T *) obj->serial.uart)));
+    
     if (obj->serial.dma_usage_tx != DMA_USAGE_NEVER) {
         if (obj->serial.dma_chn_id_tx != DMA_ERROR_OUT_OF_CHANNELS) {
             PDMA_DisableInt(obj->serial.dma_chn_id_tx, 0);
