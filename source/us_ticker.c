@@ -115,27 +115,27 @@ uint32_t us_ticker_read()
     do {
         uint32_t major_minor_us;
         uint32_t minor_us;
-        
-        uint32_t _state = __get_PRIMASK();
-        __disable_irq();
-        
-        // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT doesn't change to 0 for one tick time.
-        minor_us = TIMER_GetCounter(timer0_base) * US_PER_TMR0HIRES_CLK;
-        if (minor_us == timer0_base->CMP * US_PER_TMR0HIRES_CLK) {
-            if (! (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk)) {
-                minor_us = 0;
-            }
-        }
-        else {
-            if (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) {
-                minor_us = timer0_base->CMP * US_PER_TMR0HIRES_CLK;
-            }
-        }
-    
-        major_minor_us = counter_major * US_PER_TMR0HIRES_INT + minor_us;
-        
-        __set_PRIMASK(_state);
 
+        // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT doesn't change to 0 for one tick time.
+        // NOTE: As TIMER_CNT = TIMER_CMP or TIMER_CNT = 0, counter_major (ISR) may not sync with TIMER_CNT. So skip and fetch stable one at the cost of 1 clock delay on this read.
+        do {
+            uint32_t _state = __get_PRIMASK();
+            __disable_irq();
+            
+            uint32_t carry = (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) ? 1 : 0;
+            minor_us = TIMER_GetCounter(timer0_base) * US_PER_TMR0HIRES_CLK;
+            // When TIMER_CNT approaches TIMER_CMP and will wrap soon, we may get carry but TIMER_CNT not wrapped. Hanlde carefully carry == 1 && TIMER_CNT is near TIMER_CMP.
+            if (carry && minor_us > (US_PER_TMR0HIRES_INT / 2)) {
+                major_minor_us = (counter_major + 1) * US_PER_TMR0HIRES_INT;
+            }
+            else {
+                major_minor_us = (counter_major + carry) * US_PER_TMR0HIRES_INT + minor_us;
+            }
+            
+            __set_PRIMASK(_state);
+        }
+        while (minor_us == 0 || minor_us == US_PER_TMR0HIRES_INT);
+        
         // Add power-down compensation
         return (major_minor_us + pd_comp_us) / US_PER_TICK;
     }
