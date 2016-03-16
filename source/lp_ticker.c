@@ -113,25 +113,25 @@ uint32_t lp_ticker_read()
         uint64_t major_minor_ms;
         uint32_t minor_ms;
         
-        uint32_t _state = __get_PRIMASK();
-        __disable_irq();
-        
         // NOTE: As TIMER_CNT = TIMER_CMP and counter_major has increased by one, TIMER_CNT doesn't change to 0 for one tick time.
-        minor_ms = TIMER_GetCounter(timer2_base) * MS_PER_TMR2_CLK;
-        if (minor_ms == timer2_base->CMP * MS_PER_TMR2_CLK) {
-            if (! (timer2_base->INTSTS & TIMER_INTSTS_TIF_Msk)) {
-                minor_ms = 0;
-            }
-        }
-        else {
-            if (timer2_base->INTSTS & TIMER_INTSTS_TIF_Msk) {
-                minor_ms = timer2_base->CMP * MS_PER_TMR2_CLK;
-            }
-        }
-    
-        major_minor_ms = counter_major * MS_PER_TMR2_INT + minor_ms;
+        // NOTE: As TIMER_CNT = TIMER_CMP or TIMER_CNT = 0, counter_major (ISR) may not sync with TIMER_CNT. So skip and fetch stable one at the cost of 1 clock delay on this read.
+        do {
+            uint32_t _state = __get_PRIMASK();
+            __disable_irq();
         
-        __set_PRIMASK(_state);
+            uint32_t carry = (timer2_base->INTSTS & TIMER_INTSTS_TIF_Msk) ? 1 : 0;
+            minor_ms = TIMER_GetCounter(timer2_base) * MS_PER_TMR2_CLK;
+            // When TIMER_CNT approaches TIMER_CMP and will wrap soon, we may get carry but TIMER_CNT not wrapped. Hanlde carefully carry == 1 && TIMER_CNT is near TIMER_CMP.
+            if (carry && minor_ms > (MS_PER_TMR2_INT / 2)) {
+                major_minor_ms = (counter_major + 1) * MS_PER_TMR2_INT;
+            }
+            else {
+                major_minor_ms = (counter_major + carry) * MS_PER_TMR2_INT + minor_ms;
+            }
+            
+            __set_PRIMASK(_state);
+        }
+        while (minor_ms == 0 || minor_ms == MS_PER_TMR2_INT);
 
         // Add power-down compensation
         return (major_minor_ms / MS_PER_TICK);
