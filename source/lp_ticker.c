@@ -44,9 +44,9 @@ static volatile int cd_minor_ms = 0;
 static volatile uint32_t wakeup_tick = (uint32_t) -1;
 
 // NOTE: To wake the system from power down mode, timer clock source must be ether LXT or LIRC.
-// NOTE: TIMER_1 for tick and wakeup
-static const struct nu_modinit_s timer2_modinit = {TIMER_2, TMR2_MODULE, CLK_CLKSEL1_TMR2SEL_LIRC, 0, TMR2_RST, TMR2_IRQn, tmr2_vec};
-static const struct nu_modinit_s timer3_modinit = {TIMER_3, TMR3_MODULE, CLK_CLKSEL1_TMR3SEL_LIRC, 0, TMR3_RST, TMR3_IRQn, tmr3_vec};
+// NOTE: TIMER_2 for normal counting and TIMER_3 for scheduled wakeup
+static const struct nu_modinit_s timer2_modinit = {TIMER_2, TMR2_MODULE, CLK_CLKSEL1_TMR2SEL_LXT, 0, TMR2_RST, TMR2_IRQn, tmr2_vec};
+static const struct nu_modinit_s timer3_modinit = {TIMER_3, TMR3_MODULE, CLK_CLKSEL1_TMR3SEL_LXT, 0, TMR3_RST, TMR3_IRQn, tmr3_vec};
 
 #define TMR_CMP_MIN         2
 #define TMR_CMP_MAX         0xFFFFFFu
