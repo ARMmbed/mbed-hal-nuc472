@@ -31,16 +31,16 @@ void mbed_enter_sleep(sleep_t *obj)
 {
     // NOTE: Serial tx flush takes a long time and causes the issue: For short sleep, wakeup may come at a short time and before entering sleep. Sleep is not alarmed.
     //       Transfer the responsibility of serial tx flush to serial_api.c.
-#if 0
-    // Wait until UART FIFO empty to get a cleaner console out
-    uint32_t uart_stdio = pinmap_peripheral(STDIO_UART_TX, PinMap_UART_TX);
-    if (uart_stdio != NC) {
-        while (! UART_IS_TX_EMPTY(((UART_T *) uart_stdio)));
-    }
-#endif
     
     // Defaults to powner-down rather than CPU halt for good power saving.
     obj->powerdown = 1;
+    
+    // Check if serial allows entering power-down mode
+    if (obj->powerdown) {
+        obj->powerdown = serial_allow_powerdown();
+    }
+    // TODO: Check if other peripherals allow entering power-down mode
+    
     obj->start_us = lp_ticker_read() * MINAR_PLATFORM_TIME_BASE;
     // Let us_ticker prepare for power-down or reject it.
     us_ticker_prepare_sleep(obj);

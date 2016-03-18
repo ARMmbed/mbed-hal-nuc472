@@ -24,6 +24,7 @@
 #include "mbed-drivers/mbed_assert.h"
 #include "PeripheralPins.h"
 #include "nu_modutil.h"
+#include "nu_bitutil.h"
 
 #if DEVICE_SERIAL_ASYNCH
 #include "dma_api.h"
@@ -153,6 +154,7 @@ static struct nu_uart_var uart5_var = {
 
 int stdio_uart_inited = 0;
 serial_t stdio_uart;
+static uint32_t uart_modinit_mask = 0;
 
 static const struct nu_modinit_s uart_modinit_tab[] = {
     {UART_0, UART0_MODULE, CLK_CLKSEL1_UARTSEL_HIRC, CLK_CLKDIV0_UART(1), UART0_RST, UART0_IRQn, &uart0_var},
@@ -222,6 +224,10 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
         /* NOTE: Not required anymore because stdio_uart will be manually initialized in mbed-drivers/source/retarget.cpp from mbed beta */
         //memcpy(&stdio_uart, obj, sizeof(serial_t));
     }
+    
+    // Mark this module to be inited.
+    int i = modinit - uart_modinit_tab;
+    uart_modinit_mask |= 1 << i;
 }
 
 void serial_free(serial_t *obj)
@@ -254,6 +260,10 @@ void serial_free(serial_t *obj)
     if (obj == &stdio_uart) {
         stdio_uart_inited = 0;
     }
+    
+    // Mark this module to be deinited.
+    int i = modinit - uart_modinit_tab;
+    uart_modinit_mask &= ~(1 << i);
 }
 
 void serial_baud(serial_t *obj, int baudrate) {
@@ -636,6 +646,33 @@ int serial_irq_handler_asynch(serial_t *obj)
     }
         
     return (obj->serial.event & (event_rx | event_tx));
+}
+
+int serial_allow_powerdown(void)
+{
+    uint32_t modinit_mask = uart_modinit_mask;
+    while (modinit_mask) {
+        int uart_idx = nu_ctz(modinit_mask);
+        const struct nu_modinit_s *modinit = uart_modinit_tab + uart_idx;
+        if (modinit->modname != NC) {
+            UART_T *uart_base = NU_MODBASE(modinit->modname);
+            // Disallow entering power-down mode if Tx FIFO has data to flush
+            if (! UART_IS_TX_EMPTY((uart_base))) {
+                return 0;
+            }
+            // Disallow entering power-down mode if async Rx transfer (not PDMA) is on-going
+            if (uart_base->INTEN & (UART_INTEN_RDAIEN_Msk | UART_INTEN_RXTOIEN_Msk)) {
+                return 0;
+            }
+            // Disallow entering power-down mode if async Rx transfer (PDMA) is on-going
+            if (uart_base->INTEN & UART_INTEN_RXPDMAEN_Msk) {
+                return 0;
+            }
+        }
+        modinit_mask &= ~(1 << uart_idx);
+    }
+    
+    return 1;
 }
 
 static void uart0_vec_async(void)
