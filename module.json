@@ -1,6 +1,6 @@
 {
   "name": "mbed-hal-nuc472",
-  "version": "1.1.24",
+  "version": "1.1.25",
   "description": "mbed HAL for Nuvoton NUC472 MCUs",
   "keywords": [
     "mbed",

@@ -39,6 +39,10 @@ void mbed_enter_sleep(sleep_t *obj)
     if (obj->powerdown) {
         obj->powerdown = serial_allow_powerdown();
     }
+    // Check if spi allows entering power-down mode
+    if (obj->powerdown) {
+        obj->powerdown = spi_allow_powerdown();
+    }
     // TODO: Check if other peripherals allow entering power-down mode
     
     obj->start_us = lp_ticker_read() * MINAR_PLATFORM_TIME_BASE;

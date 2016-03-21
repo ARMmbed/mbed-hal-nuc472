@@ -85,6 +85,8 @@ static void spi_dma_handler_tx(uint32_t id, uint32_t event_dma);
 static void spi_dma_handler_rx(uint32_t id, uint32_t event_dma);
 #endif
 
+static uint32_t spi_modinit_mask = 0;
+
 static const struct nu_modinit_s spi_modinit_tab[] = {
     {SPI_0, SPI0_MODULE, 0, 0, SPI0_RST, SPI0_IRQn, &spi0_var},
     {SPI_1, SPI1_MODULE, 0, 0, SPI1_RST, SPI1_IRQn, &spi1_var},
@@ -132,6 +134,10 @@ void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk) {
     obj->spi.dma_chn_id_tx = DMA_ERROR_OUT_OF_CHANNELS;
     obj->spi.dma_chn_id_rx = DMA_ERROR_OUT_OF_CHANNELS;
 #endif
+
+    // Mark this module to be inited.
+    int i = modinit - spi_modinit_tab;
+    spi_modinit_mask |= 1 << i;
 }
 
 void spi_free(spi_t *obj)
@@ -160,6 +166,10 @@ void spi_free(spi_t *obj)
     CLK_DisableModuleClock(modinit->clkidx);
     
     //((struct nu_spi_var *) modinit->var)->obj = NULL;
+    
+    // Mark this module to be deinited.
+    int i = modinit - spi_modinit_tab;
+    spi_modinit_mask &= ~(1 << i);
 }
 void spi_format(spi_t *obj, int bits, int mode, spi_bitorder_t order)
 {
@@ -370,6 +380,25 @@ uint8_t spi_active(spi_t *obj)
     
     //return SPI_IS_BUSY(spi_base);
     return (spi_base->CTL & SPI_CTL_SPIEN_Msk);
+}
+
+int spi_allow_powerdown(void)
+{
+    uint32_t modinit_mask = spi_modinit_mask;
+    while (modinit_mask) {
+        int spi_idx = nu_ctz(modinit_mask);
+        const struct nu_modinit_s *modinit = spi_modinit_tab + spi_idx;
+        if (modinit->modname != NC) {
+            SPI_T *spi_base = NU_MODBASE(modinit->modname);
+            // Disallow entering power-down mode if SPI transfer is enabled.
+            if (spi_base->CTL & SPI_CTL_SPIEN_Msk) {
+                return 0;
+            }
+        }
+        modinit_mask &= ~(1 << spi_idx);
+    }
+    
+    return 1;
 }
 
 static int spi_writeable(spi_t * obj)
