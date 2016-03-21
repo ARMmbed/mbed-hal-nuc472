@@ -26,6 +26,7 @@
 #include "nu_bitutil.h"
 //#include "uvisor-lib/uvisor-lib.h"
 
+static uint32_t i2c_modinit_mask = 0;
 
 static const struct nu_modinit_s i2c_modinit_tab[] = {
     {I2C_0, I2C0_MODULE, 0, 0, I2C0_RST, I2C0_IRQn, NULL},
@@ -79,6 +80,10 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 #endif
 
     I2C_Open((I2C_T *) NU_MODBASE(obj->i2c.i2c), 100000);
+    
+    // Mark this module to be inited.
+    int i = modinit - i2c_modinit_tab;
+    i2c_modinit_mask |= 1 << i;
 }
 
 int i2c_start(i2c_t *obj)
@@ -218,6 +223,25 @@ int i2c_byte_read(i2c_t *obj, int last)
 int i2c_byte_write(i2c_t *obj, int data)
 {
     return i2c_do_write(obj, (data & 0xFF));
+}
+
+int i2c_allow_powerdown(void)
+{
+    uint32_t modinit_mask = i2c_modinit_mask;
+    while (modinit_mask) {
+        int i2c_idx = nu_ctz(modinit_mask);
+        const struct nu_modinit_s *modinit = i2c_modinit_tab + i2c_idx;
+        if (modinit->modname != NC) {
+            I2C_T *i2c_base = NU_MODBASE(modinit->modname);
+            // Disallow entering power-down mode if I2C transfer is enabled.
+            if (i2c_base->CTL & I2C_CTL_INTEN_Msk) {
+                return 0;
+            }
+        }
+        modinit_mask &= ~(1 << i2c_idx);
+    }
+    
+    return 1;
 }
 
 static int i2c_do_write(i2c_t *obj, char data)
