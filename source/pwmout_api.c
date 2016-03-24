@@ -23,6 +23,7 @@
 #include "PeripheralPins.h"
 #include "nu_modutil.h"
 #include "nu_miscutil.h"
+#include "nu_bitutil.h"
 
 struct nu_pwm_var {
     uint32_t    en_msk;
@@ -35,6 +36,8 @@ static struct nu_pwm_var pwm0_var = {
 static struct nu_pwm_var pwm1_var = {
     .en_msk = 0
 };
+
+static uint32_t pwm_modinit_mask = 0;
 
 // FIXME: PWM1 2/3 channels fail. PWM registers cannot write after their respective clocks are enabled.
 static const struct nu_modinit_s pwm_modinit_tab[] = {
@@ -101,6 +104,10 @@ void pwmout_init(pwmout_t* obj, PinName pin)
     PWM_Start(pwm_base, 1 << chn);
     
     ((struct nu_pwm_var *) modinit->var)->en_msk |= 1 << chn;
+    
+    // Mark this module to be inited.
+    int i = modinit - pwm_modinit_tab;
+    pwm_modinit_mask |= 1 << i;
 }
 
 void pwmout_free(pwmout_t* obj)
@@ -135,6 +142,10 @@ void pwmout_free(pwmout_t* obj)
                 CLK_DisableModuleClock(modinit->clkidx);
         }
     }
+    
+    // Mark this module to be deinited.
+    int i = modinit - pwm_modinit_tab;
+    pwm_modinit_mask &= ~(1 << i);
 }
 
 void pwmout_write(pwmout_t* obj, float value)
@@ -182,6 +193,26 @@ void pwmout_pulsewidth_us(pwmout_t* obj, int us)
 {
     obj->pulsewidth_us = NU_CLAMP(us, 0, obj->period_us);
     pwmout_config(obj);
+}
+
+int pwmout_allow_powerdown(void)
+{
+    uint32_t modinit_mask = pwm_modinit_mask;
+    while (modinit_mask) {
+        int pwm_idx = nu_ctz(modinit_mask);
+        const struct nu_modinit_s *modinit = pwm_modinit_tab + pwm_idx;
+        if (modinit->modname != NC) {
+            PWM_T *pwm_base = NU_MODBASE(modinit->modname);
+            uint32_t chn = NU_MODSUBINDEX(modinit->modname);
+            // Disallow entering power-down mode if PWM counter is enabled.
+            if ((pwm_base->CNTEN & (1 << chn)) && pwm_base->CMPDAT[chn]) {
+                return 0;
+            }
+        }
+        modinit_mask &= ~(1 << pwm_idx);
+    }
+    
+    return 1;
 }
 
 static void pwmout_config(pwmout_t* obj)
