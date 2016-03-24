@@ -64,7 +64,7 @@ struct serial_s {
     uint32_t    irq_id;
     uint32_t    inten_msk;
     
-#if DEVICE_SERIAL_ASYNCH
+    // Async transfer related fields
     DMAUsage    dma_usage_tx;
     DMAUsage    dma_usage_rx;
     int         dma_chn_id_tx;
@@ -72,7 +72,6 @@ struct serial_s {
     uint32_t    event;
     void        (*irq_handler_tx_async)(void);
     void        (*irq_handler_rx_async)(void);
-#endif
 };
 
 struct spi_s {
@@ -84,26 +83,24 @@ struct spi_s {
     
     //void        (*vec)(void);
     
-#if DEVICE_SPI_ASYNCH
+    // Async transfer related fields
     DMAUsage    dma_usage;
     int         dma_chn_id_tx;
     int         dma_chn_id_rx;
     uint32_t    event;
     //void        (*irq_handler_tx_async)(void);
     //void        (*irq_handler_rx_async)(void);
-#endif
 };
 
 struct i2c_s {
     I2CName     i2c;
     //void        (*vec)(void);
     
-#if DEVICE_I2C_ASYNCH
+    // Async transfer related fields
     DMAUsage    dma_usage;
     uint32_t    event;
     uint32_t    stop;
     uint32_t    address;
-#endif
 };
 
 struct pwmout_s {
