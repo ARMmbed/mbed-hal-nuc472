@@ -78,7 +78,7 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
     //gpio_set(pin);
     
     // Configure de-bounce clock source and sampling cycle time
-    GPIO_SET_DEBOUNCE_TIME(GPIO_DBCTL_DBCLKSRC_IRC10K, GPIO_DBCTL_DBCLKSEL_1);
+    GPIO_SET_DEBOUNCE_TIME(GPIO_DBCTL_DBCLKSRC_IRC10K, GPIO_DBCTL_DBCLKSEL_16);
     
     struct nu_gpio_irq_var *var = gpio_irq_var_arr + port_index;
     
