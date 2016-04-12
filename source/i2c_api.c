@@ -379,7 +379,7 @@ static int i2c_is_stop_det(i2c_t *obj)
 static int i2c_revise_address(int address, int read)
 {
     // FIXME: Format of passed address is unclear.
-    return (address << 1) | (read ? 0x01 : 0x00);
+    return read ? (address | 1) : (address & 0xFE);
 }
 
 #if DEVICE_I2C_ASYNCH
