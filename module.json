@@ -1,6 +1,6 @@
 {
   "name": "mbed-hal-nuc472",
-  "version": "1.1.30",
+  "version": "1.2.0",
   "description": "mbed HAL for Nuvoton NUC472 MCUs",
   "keywords": [
     "mbed",
@@ -25,7 +25,7 @@
     "mbed-hal-nuc472"
   ],
   "dependencies": {
-    "uvisor-lib": "^1.0.0",
+    "uvisor-lib": ">=1.0.0,<3.0.0",
     "mbed-hal": "*"
   },
   "targetDependencies": {

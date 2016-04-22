@@ -36,4 +36,13 @@
 #define MINAR_PLATFORM_TIME_BASE 1000
 #define MINAR_PLATFORM_MINIMUM_SLEEP 10
 
+// Substitute vIRQ_xxx() for NVIC_xxx() to support uvisor.
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "uvisor-lib/override.h"
+#ifdef __cplusplus
+}
+#endif
+
 #endif
