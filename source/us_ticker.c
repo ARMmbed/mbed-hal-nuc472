@@ -122,8 +122,9 @@ uint32_t us_ticker_read()
             uint32_t _state = __get_PRIMASK();
             __disable_irq();
             
-            uint32_t carry = (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) ? 1 : 0;
+            // NOTE: Order of reading minor_us/carry here is significant.
             minor_us = TIMER_GetCounter(timer0_base) * US_PER_TMR0HIRES_CLK;
+            uint32_t carry = (timer0_base->INTSTS & TIMER_INTSTS_TIF_Msk) ? 1 : 0;
             // When TIMER_CNT approaches TIMER_CMP and will wrap soon, we may get carry but TIMER_CNT not wrapped. Hanlde carefully carry == 1 && TIMER_CNT is near TIMER_CMP.
             if (carry && minor_us > (US_PER_TMR0HIRES_INT / 2)) {
                 major_minor_us = (counter_major + 1) * US_PER_TMR0HIRES_INT;
