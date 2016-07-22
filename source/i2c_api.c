@@ -386,8 +386,8 @@ static int i2c_revise_address(int address, int read)
 
 void i2c_transfer_asynch(i2c_t *obj, void *tx, size_t tx_length, void *rx, size_t rx_length, uint32_t address, uint32_t stop, uint32_t handler, uint32_t event, DMAUsage hint)
 {
-    // NOTE: NUC472 I2C only supports 7-bit slave address.
-    MBED_ASSERT((address & 0xFFFFFF80) == 0);
+    // NOTE: NUC472 I2C only supports 7-bit slave address. The mbed I2C address passed in is shifted left by one bit.
+    MBED_ASSERT((address & 0xFFFFFF00) == 0);
     
     // NOTE: First transmit and then receive.
     
